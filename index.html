@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plantora | The Premium Nursery Marketplace</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        forest: '#1B3022',
+                        sage: '#8DA08E',
+                        cream: '#F9F7F2',
+                        moss: '#3A5A40',
+                        clay: '#D4A373'
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Playfair Display', 'serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        body { background-color: #F9F7F2; color: #1B3022; scroll-behavior: smooth; }
+        .glass-nav { background: rgba(249, 247, 242, 0.85); backdrop-filter: blur(16px); }
+        .btn-premium { @apply bg-forest text-white px-8 py-4 rounded-full font-bold uppercase text-[10px] tracking-[0.2em] transition-all hover:bg-moss hover:shadow-xl active:scale-95 flex items-center justify-center; }
+        .plant-card { transition: all 0.4s cubic-bezier(0.2, 1, 0.3, 1); border: 1px solid rgba(27, 48, 34, 0.05); }
+        .plant-card:hover { transform: translateY(-10px); box-shadow: 0 40px 60px -15px rgba(27, 48, 34, 0.1); }
+        .animate-up { animation: fadeInUp 0.6s ease-out forwards; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body x-data="plantoraApp()">
+
+    <!-- 1. NAVIGATION -->
+    <nav class="fixed w-full z-[100] glass-nav border-b border-forest/5">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-10">
+                <a href="#" @click="setView('home')" class="text-2xl font-serif font-bold tracking-tight text-forest">Plantora.</a>
+                <div class="hidden lg:flex gap-8 text-[10px] font-bold uppercase tracking-[0.2em]">
+                    <button @click="setView('home')" :class="view === 'home' ? 'text-moss' : 'text-forest/40 hover:text-forest'">Home</button>
+                    <button @click="setView('shop')" :class="view === 'shop' || view === 'details' ? 'text-moss' : 'text-forest/40 hover:text-forest'">Marketplace</button>
+                    <button @click="setView('quiz')" :class="view === 'quiz' ? 'text-moss' : 'text-forest/40 hover:text-forest'">Plant Finder</button>
+                    <button @click="setView('dashboard')" :class="view === 'dashboard' ? 'text-moss' : 'text-forest/40 hover:text-forest'">My Garden</button>
+                </div>
+            </div>
+            <button @click="setView('cart')" class="relative flex items-center gap-2 bg-forest text-white px-5 py-2.5 rounded-full transition-all group">
+                <span class="text-[9px] font-bold uppercase tracking-widest">Cart</span>
+                <span class="w-5 h-5 bg-white text-forest text-[10px] rounded-full flex items-center justify-center font-bold" x-text="cartTotalQty()"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN WRAPPER -->
+    <main class="pt-24 min-h-screen">
+
+        <!-- HOME VIEW -->
+        <section x-show="view === 'home'" x-transition class="animate-up">
+            <div class="relative h-[80vh] flex items-center overflow-hidden mx-6 rounded-[3.5rem] shadow-2xl">
+                <img :src="heroImage" @error="$el.src = fallbackHero" class="absolute inset-0 w-full h-full object-cover brightness-[0.45]">
+                <div class="relative z-10 max-w-4xl mx-auto px-12 text-center text-white">
+                    <h1 class="text-6xl md:text-8xl font-serif mb-8 leading-tight italic">Find the right plant<br>for your space.</h1>
+                    <div class="flex flex-wrap justify-center gap-5">
+                        <button @click="setView('shop')" class="btn-premium !bg-white !text-forest hover:!bg-moss hover:!text-white shadow-2xl">Shop Marketplace</button>
+                        <button @click="setView('quiz')" class="btn-premium !bg-transparent border border-white/40 text-white">Find My Plant</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="max-w-7xl mx-auto px-6 py-24">
+                <div class="flex justify-between items-end mb-16">
+                    <h2 class="text-4xl font-serif">Curated for You</h2>
+                    <button @click="setView('shop')" class="text-xs font-bold uppercase tracking-widest border-b border-forest/20 pb-1 hover:text-moss transition-colors">See All Plants</button>
+                </div>
+                <div class="grid md:grid-cols-3 gap-10">
+                    <template x-for="plant in plants.slice(0, 3)">
+                        <div class="plant-card bg-white p-5 rounded-[2.5rem] cursor-pointer" @click="openDetails(plant)">
+                            <div class="aspect-[4/5] rounded-[2rem] overflow-hidden mb-6">
+                                <img :src="plant.image" @error="$el.src = fallbackSquare" class="w-full h-full object-cover">
+                            </div>
+                            <h3 class="text-2xl font-serif mb-2" x-text="plant.name"></h3>
+                            <div class="flex justify-between items-center text-[10px] font-bold uppercase text-sage tracking-widest">
+                                <span x-text="plant.light"></span>
+                                <span class="text-forest" x-text="'₹' + plant.price"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- MARKETPLACE VIEW -->
+        <section x-show="view === 'shop'" x-transition class="animate-up max-w-7xl mx-auto px-6 py-12">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+                <div>
+                    <h2 class="text-5xl font-serif mb-2">Marketplace</h2>
+                    <p class="text-sage italic">Connecting 120+ local partner nurseries.</p>
+                </div>
+                <input type="text" x-model="search" placeholder="Search species..." class="w-full md:w-80 p-4 bg-white border border-forest/5 rounded-2xl outline-none focus:ring-2 ring-moss/20 transition-all">
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-12">
+                <template x-for="plant in filteredPlants" :key="plant.id">
+                    <div class="plant-card bg-white p-5 rounded-[2.5rem]">
+                        <div class="relative aspect-square rounded-[2rem] overflow-hidden mb-8 cursor-pointer" @click="openDetails(plant)">
+                            <img :src="plant.image" @error="$el.src = fallbackSquare" class="w-full h-full object-cover transition-transform duration-700 hover:scale-110">
+                        </div>
+                        <div class="px-2">
+                            <h3 class="text-2xl font-serif mb-1" x-text="plant.name"></h3>
+                            <p class="text-moss font-bold mb-6 text-lg" x-text="'₹' + plant.price"></p>
+                            <div class="flex gap-3">
+                                <button @click="openDetails(plant)" class="flex-1 py-4 border border-forest/10 rounded-2xl text-[9px] font-bold uppercase tracking-widest hover:bg-forest hover:text-white transition-all">Details</button>
+                                <button @click="addToCart(plant)" class="flex-1 bg-forest text-white py-4 rounded-2xl text-[9px] font-bold uppercase tracking-widest hover:bg-moss transition-all">Add to Cart</button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- DETAILS VIEW -->
+        <section x-show="view === 'details'" x-transition class="animate-up max-w-7xl mx-auto px-6 py-12" x-cloak>
+            <button @click="setView('shop')" class="text-[10px] font-bold uppercase tracking-widest text-sage mb-10 hover:text-forest transition-colors">← Back to Marketplace</button>
+            <div class="grid lg:grid-cols-2 gap-16 items-start">
+                <div class="rounded-[3rem] overflow-hidden shadow-2xl h-[700px]">
+                    <img :src="currentPlant?.image" @error="$el.src = fallbackHero" class="w-full h-full object-cover">
+                </div>
+                <div class="flex flex-col h-full py-6">
+                    <span class="text-moss font-bold uppercase tracking-[0.4em] text-[10px] block mb-4">Nursery Expert Selection</span>
+                    <h1 class="text-6xl font-serif mb-6" x-text="currentPlant?.name"></h1>
+                    <p class="text-3xl font-serif text-moss mb-8 font-bold" x-text="'₹'+currentPlant?.price"></p>
+                    <p class="text-forest/60 text-lg leading-relaxed font-light mb-12" x-text="currentPlant?.desc"></p>
+                    
+                    <div class="grid grid-cols-2 gap-8 mb-12">
+                        <div class="bg-white p-6 rounded-3xl border border-forest/5 shadow-sm">
+                            <h4 class="text-[10px] font-bold uppercase text-sage mb-2 tracking-widest">Nursery Hub</h4>
+                            <p class="text-xs font-bold" x-text="currentPlant?.nursery"></p>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-forest/5 shadow-sm">
+                            <h4 class="text-[10px] font-bold uppercase text-sage mb-2 tracking-widest">Delivery</h4>
+                            <p class="text-xs font-bold">24-48 Hours</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-5 mt-auto">
+                        <button @click="addToCart(currentPlant)" class="flex-1 py-5 border-2 border-forest text-forest rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:bg-forest hover:text-white transition-all">Add to Cart</button>
+                        <button @click="buyNow(currentPlant)" class="flex-1 py-5 bg-forest text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:bg-moss shadow-2xl shadow-forest/20">Buy Now</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FIND MY PLANT (QUIZ) -->
+        <section x-show="view === 'quiz'" x-transition class="animate-up max-w-4xl mx-auto px-6 py-20 min-h-[80vh]">
+            <div x-show="quizStep === 0" class="text-center py-24 bg-white rounded-[4rem] shadow-xl border border-forest/5">
+                <h2 class="text-5xl font-serif mb-6">Plant Finder Quiz</h2>
+                <p class="text-sage mb-12 max-w-sm mx-auto leading-relaxed">Personalized recommendations in 60 seconds.</p>
+                <button @click="quizStep = 1" class="btn-premium mx-auto">Start Finder</button>
+            </div>
+
+            <div x-show="quizStep > 0 && quizStep <= 3" class="max-w-xl mx-auto bg-white p-16 rounded-[4rem] shadow-2xl border border-forest/5">
+                <div class="h-1.5 w-full bg-forest/5 rounded-full mb-12 overflow-hidden">
+                    <div class="h-full bg-moss transition-all duration-700" :style="`width: ${(quizStep/3)*100}%`"></div>
+                </div>
+                <template x-if="quizStep === 1">
+                    <div>
+                        <h3 class="text-3xl font-serif mb-10 text-center">Your Environment?</h3>
+                        <div class="grid gap-4">
+                            <button @click="quizStep++" class="p-6 border border-forest/10 rounded-2xl hover:border-moss font-bold text-left transition-all">Indoor Living Area</button>
+                            <button @click="quizStep++" class="p-6 border border-forest/10 rounded-2xl hover:border-moss font-bold text-left transition-all">Balcony / Garden</button>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="quizStep >= 2">
+                    <div class="text-center">
+                        <h3 class="text-3xl font-serif mb-10">Processing your matches...</h3>
+                        <button @click="runQuiz()" class="btn-premium mx-auto">See Recommendations</button>
+                    </div>
+                </template>
+            </div>
+
+            <div x-show="quizStep === 4" class="grid md:grid-cols-3 gap-10" x-cloak>
+                <template x-for="result in quizResults">
+                    <div class="plant-card bg-white p-6 rounded-[3rem] text-center">
+                        <img :src="result.image" @error="$el.src = fallbackSquare" class="w-32 h-32 rounded-full mx-auto mb-8 object-cover shadow-2xl bg-cream border-4 border-cream">
+                        <h3 class="text-2xl font-serif mb-6" x-text="result.name"></h3>
+                        <button @click="openDetails(result)" class="w-full btn-premium !py-3 !text-[9px]">View Details</button>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- CART VIEW -->
+        <section x-show="view === 'cart'" x-transition class="animate-up max-w-2xl mx-auto px-6 py-20">
+            <h2 class="text-5xl font-serif mb-12 text-center">Your Cart</h2>
+            <div class="bg-white rounded-[3.5rem] p-10 shadow-xl border border-forest/5">
+                <template x-for="(item, index) in cart" :key="index">
+                    <div class="flex items-center gap-6 mb-8 border-b border-forest/5 pb-8 last:border-0">
+                        <img :src="item.image" @error="$el.src = fallbackSquare" class="w-20 h-20 rounded-2xl object-cover shadow-sm bg-cream">
+                        <div class="flex-1">
+                            <h4 class="text-xl font-serif" x-text="item.name"></h4>
+                            <div class="flex items-center gap-3 mt-1">
+                                <button @click="updateQty(index, -1)" class="text-sage font-bold hover:text-forest">-</button>
+                                <span class="text-xs font-bold" x-text="item.qty"></span>
+                                <button @click="updateQty(index, 1)" class="text-sage font-bold hover:text-forest">+</button>
+                                <span class="text-[10px] text-sage ml-4" x-text="'₹'+item.price"></span>
+                            </div>
+                        </div>
+                        <button @click="cart.splice(index, 1)" class="text-red-400 font-bold uppercase text-[9px] hover:underline">Remove</button>
+                    </div>
+                </template>
+                <div x-show="cart.length === 0" class="text-center py-10 italic text-sage">Your cart is currently empty.</div>
+                <div x-show="cart.length > 0" class="pt-4 border-t border-forest/5">
+                    <div class="flex justify-between items-center text-3xl font-serif mb-12">
+                        <span>Total</span>
+                        <span x-text="'₹' + cartTotal()"></span>
+                    </div>
+                    <button @click="setView('checkout')" class="w-full btn-premium !py-5">Proceed to Checkout</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHECKOUT & SUCCESS -->
+        <section x-show="view === 'checkout'" class="animate-up max-w-md mx-auto py-12 px-6" x-cloak>
+            <div x-show="!orderPlaced" class="bg-white p-12 rounded-[4rem] shadow-2xl border border-forest/5">
+                <h2 class="text-3xl font-serif mb-10 text-center italic">Finalize Purchase</h2>
+                <div class="space-y-4 mb-10">
+                    <input type="text" placeholder="Full Name" class="w-full p-4 bg-cream rounded-2xl outline-none border-none focus:ring-2 ring-moss/20">
+                    <textarea placeholder="Address" class="w-full p-4 bg-cream rounded-2xl outline-none border-none h-32 focus:ring-2 ring-moss/20"></textarea>
+                </div>
+                <button @click="placeOrder()" class="w-full btn-premium">Complete Order (COD)</button>
+            </div>
+            
+            <div x-show="orderPlaced" class="text-center py-20 bg-white rounded-[4rem] shadow-2xl p-12">
+                <div class="w-24 h-24 bg-moss/10 text-moss rounded-full flex items-center justify-center mx-auto mb-8 text-4xl">✓</div>
+                <h2 class="text-5xl font-serif mb-4 italic">Success!</h2>
+                <p class="text-sage mb-12">Your companions are on their way. Order ID: #PL-99201</p>
+                <button @click="setView('dashboard')" class="btn-premium mx-auto">Go to My Garden</button>
+            </div>
+        </section>
+
+        <!-- DASHBOARD (MY GARDEN) -->
+        <section x-show="view === 'dashboard'" x-transition class="animate-up max-w-7xl mx-auto px-6 py-20" x-cloak>
+            <h2 class="text-6xl font-serif mb-4">My Garden</h2>
+            <p class="text-sage mb-16 italic">Managing <span x-text="myPlants.length"></span> nursery-sourced plants.</p>
+            <div class="grid md:grid-cols-4 gap-10">
+                <template x-for="plant in myPlants">
+                    <div class="bg-white p-8 rounded-[3.5rem] shadow-sm border border-moss/10 text-center">
+                        <img :src="plant.image" @error="$el.src = fallbackSquare" class="w-32 h-32 rounded-full mx-auto mb-6 object-cover shadow-xl border-4 border-cream bg-cream">
+                        <h3 class="text-2xl font-serif mb-4" x-text="plant.name"></h3>
+                        <div class="w-full bg-forest/5 h-1.5 rounded-full"><div class="h-full bg-moss w-3/4"></div></div>
+                        <p class="text-[9px] font-bold uppercase tracking-widest text-moss mt-4">Health: 85%</p>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-forest/5 py-24 mt-24 text-center">
+        <h2 class="text-3xl font-serif italic mb-6">Plantora.</h2>
+        <p class="text-[10px] text-forest/20 uppercase tracking-[0.3em]">Rooted in Nature, Grown with Care. © 2024</p>
+    </footer>
+
+    <!-- APP LOGIC -->
+    <script>
+        function plantoraApp() {
+            return {
+                view: 'home',
+                quizStep: 0,
+                search: '',
+                cart: [],
+                myPlants: [],
+                currentPlant: null,
+                quizResults: [],
+                orderPlaced: false,
+                
+                heroImage: 'https://images.unsplash.com/photo-1470058869958-2a77a677ca43?auto=format&fit=crop&q=80&w=1600',
+                fallbackSquare: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=400&h=400&q=60',
+                fallbackHero: 'https://images.unsplash.com/photo-1463936575829-25148e1db1b8?auto=format&fit=crop&q=80',
+
+                plants: [
+                    { id: 1, name: 'Snake Plant', price: 499, light: 'Low', maintenance: 'Low', nursery: 'Green Root Hub', image: 'https://images.unsplash.com/photo-159348351cc94-2214e980c238?auto=format&fit=crop&q=80', desc: 'Indestructible architectural marvel. Perfect for low light.' },
+                    { id: 2, name: 'Monstera Deliciosa', price: 899, light: 'Medium', maintenance: 'Medium', nursery: 'Urban Jungle', image: 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&q=80', desc: 'The iconic statement plant for any bright living room.' },
+                    { id: 3, name: 'Peace Lily', price: 350, light: 'Low', maintenance: 'Medium', nursery: 'Heritage Botanics', image: 'https://images.unsplash.com/photo-1593691509543-c55fb32e7355?auto=format&fit=crop&q=80', desc: 'Elegant and air-purifying. Loves consistent moisture.' },
+                    { id: 4, name: 'Aloe Vera', price: 299, light: 'High', maintenance: 'Low', nursery: 'Sunrise Garden', image: 'https://images.unsplash.com/photo-1596547609652-9cf5d8d76921?auto=format&fit=crop&q=80', desc: 'Practical succulent with healing properties.' },
+                    { id: 5, name: 'Pothos', price: 250, light: 'Low', maintenance: 'Low', nursery: 'Green Root Hub', image: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e5e?auto=format&fit=crop&q=80', desc: 'Beautiful trailing vines, perfect for shelves.' },
+                    { id: 6, name: 'ZZ Plant', price: 599, light: 'Low', maintenance: 'Low', nursery: 'City Botanic', image: 'https://images.unsplash.com/photo-1632207691143-643e2a9a9361?auto=format&fit=crop&q=80', desc: 'Glossy leaves, thrives on neglect.' }
+                ],
+
+                get filteredPlants() {
+                    return this.plants.filter(p => p.name.toLowerCase().includes(this.search.toLowerCase()));
+                },
+
+                setView(name) {
+                    this.view = name;
+                    this.orderPlaced = false;
+                    this.quizStep = 0;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                openDetails(plant) {
+                    this.currentPlant = plant;
+                    this.view = 'details';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                addToCart(plant) {
+                    let existing = this.cart.find(i => i.id === plant.id);
+                    if (existing) {
+                        existing.qty++;
+                    } else {
+                        this.cart.push({...plant, qty: 1});
+                    }
+                    alert(plant.name + ' added to cart.');
+                },
+
+                buyNow(plant) {
+                    this.addToCart(plant);
+                    this.setView('checkout');
+                },
+
+                updateQty(idx, amt) {
+                    this.cart[idx].qty += amt;
+                    if (this.cart[idx].qty < 1) this.cart.splice(idx, 1);
+                },
+
+                cartTotalQty() {
+                    return this.cart.reduce((sum, i) => sum + i.qty, 0);
+                },
+
+                cartTotal() {
+                    return this.cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+                },
+
+                runQuiz() {
+                    this.quizResults = this.plants.slice(0, 3);
+                    this.quizStep = 4;
+                },
+
+                placeOrder() {
+                    this.myPlants = [...this.myPlants, ...this.cart];
+                    this.cart = [];
+                    this.orderPlaced = true;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
